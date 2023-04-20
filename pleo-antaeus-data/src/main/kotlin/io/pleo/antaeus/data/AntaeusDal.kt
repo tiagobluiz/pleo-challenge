@@ -38,6 +38,15 @@ class AntaeusDal(private val db: Database) {
         }
     }
 
+    fun fetchInvoicesByStatusGroupedByCustomer(status: Set<InvoiceStatus>): Map<Int, Invoice> = transaction(db) {
+        InvoiceTable
+            .select { InvoiceTable.status.inList(status.map { it.name }) }
+            .groupBy(InvoiceTable.customerId)
+            .map { it.toInvoice() }
+            .associateBy { it.customerId }
+
+    }
+
     fun createInvoice(amount: Money, customer: Customer, status: InvoiceStatus = InvoiceStatus.PENDING): Invoice? {
         val id = transaction(db) {
             // Insert the invoice and returns its new id.
