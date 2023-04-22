@@ -27,10 +27,18 @@ requirements and expected behaviours.
 
 ## Brief Notes
 
+- Kotlin version was bumped only to 1.6.21 due to problems with gradle build. I've decided to not invest time trying to
+  fix the issue as it would not bring much value. Most probably there's a mismatch between gradle and kotlin/jvm versions.
 - To guarantee better separation of responsibilities, it would be better to have a Dal for each table instead of a
   AntaeusDal.
 - For the application's flow having the serializable transaction level does not seem to be justified as it comes with
   potentially big performance impact when dealing with big data, as it prevents any type of parallelization. Therefore,
   to increase parallelization and still give some guarantees of data consistency, I've opted to lower the level to
   Repeatable Read. Note that, having phantom reads is acceptable given that invoices created after the processing starts
-  should not be taken into account in the current month. 
+  should not be taken into account in the current month.
+- The in-emory groupBy performed in the AntaeusDal's `fetchInvoicesByStatusGroupedByCustomer` can become a problem if
+  the number of invoices starts reaching the hundreds of millions. However, given the small size of the Invoice object,
+  its performance for now it is acceptable.
+- The main function in the `BillingService` returns an object so that we can get some feedback (besides the logs) of
+  what's happening in our application and enable the API to return, if required eventually, some data about the
+  processing.

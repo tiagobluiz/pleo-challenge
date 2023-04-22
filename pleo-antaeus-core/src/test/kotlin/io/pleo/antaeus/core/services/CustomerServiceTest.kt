@@ -1,17 +1,18 @@
 package io.pleo.antaeus.core.services
 
+import Customers.CUSTOMER_1_ID
+import Customers.CUSTOMER_2_ID
+import Invoices.INVOICE_1
+import Invoices.INVOICE_2
+import Invoices.INVOICE_3
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.pleo.antaeus.core.exceptions.CustomerNotFoundException
 import io.pleo.antaeus.data.AntaeusDal
-import io.pleo.antaeus.models.Currency.EUR
-import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus.PENDING
-import io.pleo.antaeus.models.Money
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.math.BigDecimal
 
 class CustomerServiceTest {
     private val dal = mockk<AntaeusDal> {
@@ -36,19 +37,10 @@ class CustomerServiceTest {
         )
 
         // execute
-        val invoicesGroupedByClient: Map<Int, List<Invoice>> = customerService.fetchInvoicesGroupedByClient()
+        val invoicesGroupedByClient = customerService.fetchInvoicesGroupedByClient()
 
         // assert
         invoicesGroupedByClient.keys shouldBe setOf(CUSTOMER_1_ID, CUSTOMER_2_ID)
-        invoicesGroupedByClient.values shouldBe setOf(INVOICE_1, INVOICE_2, INVOICE_3)
-    }
-
-    companion object {
-        private const val CUSTOMER_1_ID = 1
-        private const val CUSTOMER_2_ID = 2
-
-        private val INVOICE_1 = Invoice(1, CUSTOMER_1_ID, Money(BigDecimal.ONE, EUR), PENDING)
-        private val INVOICE_2 = Invoice(2, CUSTOMER_1_ID, Money(BigDecimal.TEN, EUR), PENDING)
-        private val INVOICE_3 = Invoice(3, CUSTOMER_2_ID, Money(BigDecimal.TEN, EUR), PENDING)
+        invoicesGroupedByClient.values.flatten() shouldBe setOf(INVOICE_1, INVOICE_2, INVOICE_3)
     }
 }

@@ -21,7 +21,7 @@ fun Project.kotlinProject() {
         "testImplementation"("io.mockk:mockk:1.9.3")
 
         // Kotest
-        "testImplementation"("io.kotest:kotest-assertions-core-jvm:5.6.1")
+        "testImplementation"("io.kotest:kotest-assertions-core-jvm:5.3.2")
 
         // JUnit 5
         "testImplementation"("org.junit.jupiter:junit-jupiter-api:$junitVersion")
