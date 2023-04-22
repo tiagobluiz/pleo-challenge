@@ -28,7 +28,8 @@ requirements and expected behaviours.
 ## Brief Notes
 
 - Kotlin version was bumped only to 1.6.21 due to problems with gradle build. I've decided to not invest time trying to
-  fix the issue as it would not bring much value. Most probably there's a mismatch between gradle and kotlin/jvm versions.
+  fix the issue as it would not bring much value. Most probably there's a mismatch between gradle and kotlin/jvm
+  versions.
 - To guarantee better separation of responsibilities, it would be better to have a Dal for each table instead of a
   AntaeusDal.
 - For the application's flow having the serializable transaction level does not seem to be justified as it comes with
@@ -42,3 +43,5 @@ requirements and expected behaviours.
 - The main function in the `BillingService` returns an object so that we can get some feedback (besides the logs) of
   what's happening in our application and enable the API to return, if required eventually, some data about the
   processing.
+- Usually, the retrying mechanism should be done on the client level, not on the caller level. In here we do it at the
+  caller level just for demonstration purposes.

@@ -7,6 +7,7 @@ import Invoices.INVOICE_1
 import Invoices.INVOICE_2
 import Invoices.INVOICE_3
 import io.kotest.matchers.collections.shouldBeOneOf
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
@@ -26,6 +27,7 @@ class BillingServiceTest {
         every {
             fetchInvoicesGroupedByClient()
         } returns INVOICES_BY_CUSTOMER.mapValues { (_, invoices) -> invoices.filter { it.status == InvoiceStatus.PENDING } }
+            .filter { it.value.isNotEmpty() }
     }
 
     private val billingService = BillingService(paymentProvider, customerService)
@@ -49,8 +51,10 @@ class BillingServiceTest {
         billingResults.resultsByCustomer.isEmpty() shouldBe false
         billingResults.resultsByCustomer.size shouldBe 2
 
-        billingResults.resultsByCustomer[CUSTOMER_1_ID] shouldBe CustomerProcessingResults(CUSTOMER_1_ID, 1, 1, 0)
-        billingResults.resultsByCustomer[CUSTOMER_2_ID] shouldBe CustomerProcessingResults(CUSTOMER_2_ID, 2, 2, 0)
+        billingResults.resultsByCustomer shouldContainExactly setOf(
+            CustomerProcessingResults(CUSTOMER_1_ID, 2, 2, 0),
+            CustomerProcessingResults(CUSTOMER_2_ID, 1, 1, 0)
+        )
     }
 
     @Test
@@ -77,8 +81,10 @@ class BillingServiceTest {
         billingResults.resultsByCustomer.isEmpty() shouldBe false
         billingResults.resultsByCustomer.size shouldBe 2
 
-        billingResults.resultsByCustomer[CUSTOMER_1_ID] shouldBe CustomerProcessingResults(CUSTOMER_1_ID, 1, 1, 0)
-        billingResults.resultsByCustomer[CUSTOMER_2_ID] shouldBe CustomerProcessingResults(CUSTOMER_2_ID, 2, 1, 1)
+        billingResults.resultsByCustomer shouldContainExactly setOf(
+            CustomerProcessingResults(CUSTOMER_1_ID, 2, 1, 1),
+            CustomerProcessingResults(CUSTOMER_2_ID, 1, 1, 0)
+        )
     }
 
     @Test
@@ -105,7 +111,9 @@ class BillingServiceTest {
         billingResults.resultsByCustomer.isEmpty() shouldBe false
         billingResults.resultsByCustomer.size shouldBe 2
 
-        billingResults.resultsByCustomer[CUSTOMER_1_ID] shouldBe CustomerProcessingResults(CUSTOMER_1_ID, 1, 0, 1)
-        billingResults.resultsByCustomer[CUSTOMER_2_ID] shouldBe CustomerProcessingResults(CUSTOMER_2_ID, 2, 2, 0)
+        billingResults.resultsByCustomer shouldContainExactly setOf(
+            CustomerProcessingResults(CUSTOMER_1_ID, 2, 1, 1),
+            CustomerProcessingResults(CUSTOMER_2_ID, 1, 1, 0)
+        )
     }
 }

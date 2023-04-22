@@ -1,7 +1,7 @@
 package io.pleo.antaeus.models
 
 data class BillingProcessingResults(
-    val resultsByCustomer: Map<Int, CustomerProcessingResults>
+    val resultsByCustomer: Set<CustomerProcessingResults>
 )
 
 data class CustomerProcessingResults(
