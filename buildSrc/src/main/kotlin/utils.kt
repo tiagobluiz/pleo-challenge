@@ -17,6 +17,9 @@ fun Project.kotlinProject() {
         "implementation"("org.slf4j:slf4j-simple:1.7.30")
         "implementation"("io.github.microutils:kotlin-logging:1.7.8")
 
+        // Quartz - scheduling of jobs
+        "implementation"("org.quartz-scheduler:quartz:2.3.2")
+
         // Mockk
         "testImplementation"("io.mockk:mockk:1.9.3")
 

@@ -8,6 +8,8 @@
 package io.pleo.antaeus.app
 
 import getPaymentProvider
+import io.pleo.antaeus.core.jobs.InvoicingJob
+import io.pleo.antaeus.core.jobs.InvoicingJobFactory
 import io.pleo.antaeus.core.services.BillingService
 import io.pleo.antaeus.core.services.CustomerService
 import io.pleo.antaeus.core.services.InvoiceService
@@ -21,6 +23,11 @@ import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.quartz.CronScheduleBuilder
+import org.quartz.JobBuilder
+import org.quartz.SchedulerFactory
+import org.quartz.TriggerBuilder
+import org.quartz.impl.StdSchedulerFactory
 import setupInitialData
 import java.io.File
 import java.sql.Connection
@@ -39,7 +46,7 @@ fun main() {
             password = ""
         )
         .also {
-            TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_REPEATABLE_READ
+            TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
             transaction(it) {
                 addLogger(StdOutSqlLogger)
                 // Drop all existing tables to ensure a clean slate on each run
@@ -65,9 +72,31 @@ fun main() {
     // This is _your_ billing service to be included where you see fit
     val billingService = BillingService(paymentProvider = paymentProvider, customerService = customerService)
 
+    // Schedule job
+    scheduleInvoicingJob(billingService)
+
     // Create REST web service
     AntaeusRest(
         invoiceService = invoiceService,
         customerService = customerService
     ).run()
+}
+
+private fun scheduleInvoicingJob(billingService: BillingService) {
+    val job = JobBuilder.newJob(InvoicingJob::class.java)
+        .withIdentity("invoicingJob")
+        .build()
+
+    val trigger = TriggerBuilder.newTrigger()
+        .withIdentity("invoicingTrigger")
+        .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 1 * ?")) // every 1st day of month
+        .forJob(job)
+        .build()
+
+    val schedulerFactory: SchedulerFactory = StdSchedulerFactory()
+    val scheduler = schedulerFactory.scheduler
+
+    scheduler.setJobFactory(InvoicingJobFactory(billingService))
+    scheduler.scheduleJob(job, trigger)
+    scheduler.start()
 }

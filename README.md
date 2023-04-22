@@ -24,6 +24,10 @@ requirements and expected behaviours.
   microservice and better distribute the workload, we should use job queues such as RabbitMQ. The orchestrator would
   partition the dataset into multiple chunks and then each server would consume it from the queue. For simplicity’s
   sake, I assumed a single server, thus I don't deal with the distribution of work among multiple servers.
+- Currency problems are assumed to be handled by the Payment service.
+- The job will be run at the 1st day of each month at midnight. I've assumed that time zones are not a problem for
+  simplicity’s sake - but either way if we had a cloud provider with servers in each continent, as we will always point
+  to the closest server, this shouldn't be a problem (or at least we wouldn't fail by much).
 
 ## Brief Notes
 
@@ -34,9 +38,10 @@ requirements and expected behaviours.
   AntaeusDal.
 - For the application's flow having the serializable transaction level does not seem to be justified as it comes with
   potentially big performance impact when dealing with big data, as it prevents any type of parallelization. Therefore,
-  to increase parallelization and still give some guarantees of data consistency, I've opted to lower the level to
+  to increase parallelization and still give some guarantees of data consistency, I would've opted to lower the level to
   Repeatable Read. Note that, having phantom reads is acceptable given that invoices created after the processing starts
-  should not be taken into account in the current month.
+  should not be taken into account in the current month. However, SQLite does not support such level, so I'll stick with
+  serializable.
 - The in-emory groupBy performed in the AntaeusDal's `fetchInvoicesByStatusGroupedByCustomer` can become a problem if
   the number of invoices starts reaching the hundreds of millions. However, given the small size of the Invoice object,
   its performance for now it is acceptable.
@@ -45,3 +50,9 @@ requirements and expected behaviours.
   processing.
 - Usually, the retrying mechanism should be done on the client level, not on the caller level. In here we do it at the
   caller level just for demonstration purposes.
+
+## Performance
+
+Despite being important to have good performance, for the job we are doing here this does not come as requirement as is
+it done in the background. For this job, we should be mainly worried with two things: memory consumption, and avoid
+overloading the external API with concurrent requests.
