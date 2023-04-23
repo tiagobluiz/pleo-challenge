@@ -20,12 +20,19 @@ Across the development of this challenge, several assumptions were made in order
 statement did not define. The list of those assumptions is provided below.
 
 - If a given invoice fails either by having `PaymentProvider.charge()` returning `false` or by network fail (after the
-  retry attempts) the invoice will only be charged next month. This is just a matter of how we define the scheduler,
-  if the product defined that we should retry every day it would be just a matter of redefining the cron expression.
-  Moreover, if it was important to separate between refused charges and network fails, we would need to create a new
-  Invoice Status, `FAILED`. Ideally, we should have a different job to handle such invoices.
-- I've defined that whenever a `CustomerNotFoundException` is thrown by the payment provider the invoices will remain
-  as `PENDING`. However, this is purely a product decision.
+  retry attempts) the invoice will only be charged next month. If the product defined that we should retry every day it
+  would be just a matter of redefining the cron expression. Moreover, if it was important to separate between refused
+  charges and network fails, we would need to create a new Invoice Status, `FAILED`. Ideally, we should have a different
+  job to handle such invoices.
+- If an invoice has a currency error, it is marked as `INVALID`. The status should be marked as `PENDING` when the
+  invoice is updated. For that, a new REST endpoint (`PUT /rest/v1/invoices/{:id}`) was provided just for that intent.
+- Whenever a `CustomerNotFoundException` is thrown by the payment provider the invoices will remain as `PENDING`.
+  However, this is purely a product decision. The reason why I didn't mark it as `INVALID` is that the invoice itself
+  does not contain invalid data. Rather, this is a failure of the payment provider that missed to create the customer on
+  their side.
+- Whenever an exception that required manual intervention, i.e., `CustomerNotFoundException`
+  and `CurrencyMismatchException` occurred, we should notify the person(s) that are able to solve the issue. I didn't
+  explore that in this solution, but one possibility would be an email notification.
 - If we were to implement this aiming at production-level, to take advantage of having multiple servers running our
   microservice and better distribute the workload, we should use job queues such as RabbitMQ. The orchestrator would
   partition the dataset into multiple chunks and then each server would consume it from the queue. For simplicity’s
@@ -58,9 +65,24 @@ statement did not define. The list of those assumptions is provided below.
   what's happening in our application and enable the API to return, some data about the processing.
 - To avoid overwhelming the Payment Provider with unnecessary calls, if a `CustomerNotFoundException` is thrown, the
   processing for that client is terminated.
-- If an invoice has a currency error, it is marked as `INVALID`. The status will be marked as `PENDING` when the
-  currency is updated. For that, a new REST endpoint was provided just for that effect.
 - A REST endpoint `POST /rest/v1/billing` was created in order to enable anyone to run the job through an endpoint.
   The `POST` method was used given that several consecutive calls of this endpoint may produce different results, i.e.,
   it is not idempotent. This covers the scenario where someone created a client after the job was run or after solving
   invalid invoices (currency problems).
+- In a production-ready application, the retry mechanism implemented in the `RetryablePaymentProvider` should receive
+  its parameters through configuration.
+- As in most scenarios, the parallelization is only beneficial when we have big datasets. For small datasets, the amount
+  of extra resources we create slow down the program. For 62500 invoices, the parallel implementation achieved a speedup
+  of 1,5.
+
+# Final thoughts
+
+This is a very interesting challenge. Despite it's very simple statement you have a lot of places where you can enter a
+rabbit hole and explore a lot.
+
+It was my first time working with Javalin and Exposed but both seem pretty intuitive and did not increase the challenge
+difficulty. Overall, I've tried to worry more about performance, memory and the correctness of the solution than with
+potential product decisions, as most of them are a matter of changing simple things on the code (e.g: dealing
+differently with network and currency failures).
+
+In total, I've spent 6 to 8 hours doing this challenge. 

@@ -63,12 +63,13 @@ class BillingService(
                     is NetworkException -> logger.error { "Network error when processing invoice with id ${it.id} for customer ${it.customerId}" }
                     is CurrencyMismatchException -> {
                         logger.error { "Invoice ${it.id} has the wrong currency (${it.amount.currency}). Marking it as invalid." }
-                        // Ideally, customer should be notified of this failure in order to address it
+                        // Ideally, customer should be notified of this failure in order to address it (e.g. through email)
                         invoiceService.updateInvoiceStatus(it.id, INVALID)
                     }
 
                     is CustomerNotFoundException -> {
                         logger.error { "Customer ${it.customerId} was not found in the payment provider. Stopping charging operations for this customer." }
+                        // Ideally, admin should be notified of this failure in order to address it (e.g. through email)
                         return CustomerProcessingResults(customerId, 0, 0, invoices.size)
                     }
 
