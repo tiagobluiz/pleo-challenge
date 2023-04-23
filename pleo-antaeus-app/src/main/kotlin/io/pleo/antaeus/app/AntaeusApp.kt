@@ -92,8 +92,7 @@ private fun scheduleInvoicingJob(billingService: BillingService) {
 
     val trigger = TriggerBuilder.newTrigger()
         .withIdentity("invoicingTrigger")
-//        .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 1 * ?")) // every 1st day of month
-        .withSchedule(CronScheduleBuilder.cronSchedule(" 0/10 0/1 * 1/1 * ? *")) // every 10s day of month
+        .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 1 * ?")) // every 1st day of month
         .forJob(job)
         .build()
 
