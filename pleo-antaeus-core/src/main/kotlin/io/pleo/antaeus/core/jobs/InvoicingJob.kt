@@ -10,14 +10,8 @@ class InvoicingJob(private val billingService: BillingService) : Job {
     private val logger = KotlinLogging.logger { }
 
     override fun execute(context: JobExecutionContext?) {
-        logger.info { "Starting to execute the Invoicing Job" }
-        val startTime = System.currentTimeMillis()
+        logger.info { "Starting to execute Invoice Job" }
 
         billingService.chargeInvoices()
-
-        val finishTime = System.currentTimeMillis()
-        val executionTime = finishTime - startTime
-
-        logger.info { "Finished executing the Invoicing Job in $executionTime ms" }
     }
 }

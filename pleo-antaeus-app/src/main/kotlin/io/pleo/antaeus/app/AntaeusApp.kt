@@ -8,6 +8,7 @@
 package io.pleo.antaeus.app
 
 import getPaymentProvider
+import io.pleo.antaeus.core.external.RetryablePaymentProvider
 import io.pleo.antaeus.core.jobs.InvoicingJob
 import io.pleo.antaeus.core.jobs.InvoicingJobFactory
 import io.pleo.antaeus.core.services.BillingService
@@ -64,13 +65,14 @@ fun main() {
 
     // Get third parties
     val paymentProvider = getPaymentProvider()
+    val retryablePaymentProvider = RetryablePaymentProvider(paymentProvider)
 
     // Create core services
     val invoiceService = InvoiceService(dal = dal)
     val customerService = CustomerService(dal = dal)
 
     // This is _your_ billing service to be included where you see fit
-    val billingService = BillingService(paymentProvider = paymentProvider, invoiceService = invoiceService)
+    val billingService = BillingService(paymentProvider = retryablePaymentProvider, invoiceService = invoiceService)
 
     // Schedule job
     scheduleInvoicingJob(billingService)
@@ -90,7 +92,8 @@ private fun scheduleInvoicingJob(billingService: BillingService) {
 
     val trigger = TriggerBuilder.newTrigger()
         .withIdentity("invoicingTrigger")
-        .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 1 * ?")) // every 1st day of month
+//        .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 1 * ?")) // every 1st day of month
+        .withSchedule(CronScheduleBuilder.cronSchedule(" 0/10 0/1 * 1/1 * ? *")) // every 10s day of month
         .forJob(job)
         .build()
 
