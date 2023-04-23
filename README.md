@@ -40,7 +40,8 @@ statement did not define. The list of those assumptions is provided below.
   Additionally, in the `BillinngService.chargeInvoices()`, we should split the processing of invoices per clients into
   several smaller batches to avoid overwhelming the Payment Provider (e.g.: 1000 clients at a time), and restrain memory
   consumption.
-- Currency problems are assumed to be handled by the Payment service.
+- Different currencies are assumed to be handled by the Payment service (i.e., one single instance of
+  a `PaymentProvider` is required)
 - The job will be run at the 1st day of each month at midnight. I've assumed that time zones are not a problem for
   simplicity’s sake - but either way if we had a cloud provider with servers in each continent, as we will always point
   to the closest server, this shouldn't be a problem (or at least we wouldn't fail by much).
