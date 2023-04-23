@@ -26,7 +26,7 @@ class BillingServiceTest {
     private val paymentProvider = mockk<PaymentProvider>()
     private val invoiceService = mockk<InvoiceService>() {
         every {
-            fetchInvoicesGroupedByClient()
+            fetchPendingInvoicesByClient()
         } returns INVOICES_BY_CUSTOMER.mapValues { (_, invoices) -> invoices.filter { it.status == InvoiceStatus.PENDING } }
             .filter { it.value.isNotEmpty() }
 

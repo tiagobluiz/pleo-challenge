@@ -26,7 +26,7 @@ class BillingService(
         val startTime = System.currentTimeMillis()
 
         val results = runBlocking {
-            val invoicesByCustomer = invoiceService.fetchInvoicesGroupedByClient()
+            val invoicesByCustomer = invoiceService.fetchPendingInvoicesByClient()
 
             invoicesByCustomer
                 .map { (client, invoices) ->

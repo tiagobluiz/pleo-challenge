@@ -19,7 +19,7 @@ class InvoiceService(private val dal: AntaeusDal) {
         return dal.fetchInvoice(id) ?: throw InvoiceNotFoundException(id)
     }
 
-    fun fetchInvoicesGroupedByClient(): Map<Int, List<Invoice>> =
+    fun fetchPendingInvoicesByClient(): Map<Int, List<Invoice>> =
         dal.fetchInvoicesByStatusGroupedByCustomer(setOf(InvoiceStatus.PENDING))
 
     fun updateInvoice(id: Int, invoiceRequest: InvoiceRequest): Invoice =

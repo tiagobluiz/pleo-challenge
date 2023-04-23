@@ -38,7 +38,7 @@ class InvoiceServiceTest {
         )
 
         // execute
-        val invoicesGroupedByClient = invoiceService.fetchInvoicesGroupedByClient()
+        val invoicesGroupedByClient = invoiceService.fetchPendingInvoicesByClient()
 
         // assert
         invoicesGroupedByClient.keys shouldBe setOf(CUSTOMER_1_ID, CUSTOMER_2_ID)
