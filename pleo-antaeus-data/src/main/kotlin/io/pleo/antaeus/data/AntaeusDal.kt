@@ -8,10 +8,7 @@
 package io.pleo.antaeus.data
 
 import io.pleo.antaeus.models.*
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class AntaeusDal(private val db: Database) {
@@ -56,6 +53,16 @@ class AntaeusDal(private val db: Database) {
         }
 
         return fetchInvoice(id)
+    }
+
+    fun setInvoiceStatus(id: Int, status: InvoiceStatus): Boolean {
+        val updatedRows = transaction(db) {
+            InvoiceTable.update({InvoiceTable.id.eq(id)}) {
+                it[this.status] = status.name
+            }
+        }
+        // When updated rows are 1 it means that the invoice with that id exists and the update was successful
+        return updatedRows == 1
     }
 
     fun fetchCustomer(id: Int): Customer? {
