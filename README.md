@@ -48,8 +48,10 @@ requirements and expected behaviours.
 - The main function in the `BillingService` returns an object so that we can get some feedback (besides the logs) of
   what's happening in our application and enable the API to return, if required eventually, some data about the
   processing.
-- Usually, the retrying mechanism should be done on the client level, not on the caller level. In here we do it at the
-  caller level just for demonstration purposes.
+- To avoid overwhelming the Payment Provider with unnecessary calls, if a `CustomerNotFoundException` is thrown, the
+  processing for that client is terminated.
+- If an invoice has a currency error, it is marked as `INVALID`. The status will be marked as `PENDING` when the
+  currency is updated. For that, a new REST endpoint was provided just for that effect.
 
 ## Performance
 

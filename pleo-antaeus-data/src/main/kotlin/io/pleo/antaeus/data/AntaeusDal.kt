@@ -8,6 +8,7 @@
 package io.pleo.antaeus.data
 
 import io.pleo.antaeus.models.*
+import io.pleo.antaeus.models.InvoiceStatus.PENDING
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -40,7 +41,7 @@ class AntaeusDal(private val db: Database) {
 
     }
 
-    fun createInvoice(amount: Money, customer: Customer, status: InvoiceStatus = InvoiceStatus.PENDING): Invoice? {
+    fun createInvoice(amount: Money, customer: Customer, status: InvoiceStatus = PENDING): Invoice? {
         val id = transaction(db) {
             // Insert the invoice and returns its new id.
             InvoiceTable
@@ -55,14 +56,27 @@ class AntaeusDal(private val db: Database) {
         return fetchInvoice(id)
     }
 
-    fun setInvoiceStatus(id: Int, status: InvoiceStatus): Boolean {
+    fun updateInvoiceStatus(id: Int, status: InvoiceStatus): Boolean {
         val updatedRows = transaction(db) {
-            InvoiceTable.update({InvoiceTable.id.eq(id)}) {
+            InvoiceTable.update({ InvoiceTable.id eq id }) {
                 it[this.status] = status.name
             }
         }
         // When updated rows are 1 it means that the invoice with that id exists and the update was successful
         return updatedRows == 1
+    }
+
+    fun updateInvoice(id: Int, amount: Money, status: InvoiceStatus): Invoice? {
+        // Update operations (that not on status itself) are only accepted over non-paid invoices
+        val updatedRows = transaction(db) {
+            InvoiceTable.update({ (InvoiceTable.id eq id) and (InvoiceTable.status neq InvoiceStatus.PAID.name) }) {
+                it[this.value] = amount.value
+                it[this.currency] = amount.currency.name
+                it[this.status] = status.name
+            }
+        }
+        // When updated rows are 1 it means that valid (non-paid) invoice with that id exists and the update was successful
+        return if (updatedRows == 1) fetchInvoice(id) else null
     }
 
     fun fetchCustomer(id: Int): Customer? {

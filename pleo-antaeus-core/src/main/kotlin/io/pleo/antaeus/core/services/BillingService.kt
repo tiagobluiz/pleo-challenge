@@ -13,14 +13,13 @@ import mu.KotlinLogging
 
 class BillingService(
     private val paymentProvider: PaymentProvider,
-    private val invoiceService: InvoiceService,
-    private val customerService: CustomerService
+    private val invoiceService: InvoiceService
 ) {
 
     private val logger = KotlinLogging.logger { }
 
     fun chargeInvoices(): BillingProcessingResults {
-        val invoicesByCustomer = customerService.fetchInvoicesGroupedByClient()
+        val invoicesByCustomer = invoiceService.fetchInvoicesGroupedByClient()
 
         val resultsByCustomer = invoicesByCustomer
             .map { (client, invoices) -> processCustomerInvoices(client, invoices) }
@@ -35,19 +34,19 @@ class BillingService(
         invoices.forEach {
             try {
                 if (paymentProvider.charge(it)) {
-                    invoiceService.setInvoiceStatus(it.id, PAID)
+                    invoiceService.updateInvoiceStatus(it.id, PAID)
                     successfulCharges++
                 }
             } catch (e: Exception) {
                 when(e) {
                     is NetworkException -> logger.error { "Network error when processing invoice with id ${it.id} for customer ${it.customerId}" }
                     is CurrencyMismatchException -> {
-                        logger.error { "Invoice ${it.id} has the wrong currency (${it.amount.currency}. Marking it as invalid." }
-                        invoiceService.setInvoiceStatus(it.id, INVALID)
+                        logger.error { "Invoice ${it.id} has the wrong currency (${it.amount.currency}). Marking it as invalid." }
+                        invoiceService.updateInvoiceStatus(it.id, INVALID)
                     }
                     is CustomerNotFoundException -> {
                         logger.error { "Customer ${it.customerId} was not found in the payment provider. Stopping charging operations for this customer." }
-                        return@forEach
+                        return CustomerProcessingResults(customerId, 0, 0 , invoices.size)
                     }
                     else -> logger.error { "An unexpected error occurred. More details: ${e.message}" }
                 }
