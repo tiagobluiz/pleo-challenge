@@ -60,9 +60,9 @@ statement did not define. The list of those assumptions is provided below.
   serializable.
 - The in-memory groupBy performed in the AntaeusDal's `fetchInvoicesByStatusGroupedByCustomer` can become a problem if
   the number of invoices starts reaching the hundreds of millions. However, given the small size of the Invoice object,
-  its performance for now it is acceptable.
-- The main function in the `BillingService` returns an object so that we can get some feedback (besides the logs) of
-  what's happening in our application and enable the API to return, some data about the processing.
+  its performance for now is acceptable.
+- The main function in the `BillingService` returns an object so that we can get some reports (besides the logs) of
+  what's happening in our application and enable the API to return some data about the processing.
 - To avoid overwhelming the Payment Provider with unnecessary calls, if a `CustomerNotFoundException` is thrown, the
   processing for that client is terminated.
 - A REST endpoint `POST /rest/v1/billing` was created in order to enable anyone to run the job through an endpoint.
@@ -84,5 +84,13 @@ It was my first time working with Javalin and Exposed but both seem pretty intui
 difficulty. Overall, I've tried to worry more about performance, memory and the correctness of the solution than with
 potential product decisions, as most of them are a matter of changing simple things on the code (e.g: dealing
 differently with network and currency failures).
+There are several possible / acceptable parallelization strategies, the main two that I thought were:
+
+1. Processing multiple clients in parallel. The main problem with this strategy is that we may have unbalanced threads
+   as client with many invoices may take more time than others. As it was mentioned above, this could be solved by
+   processing the invoices in batches.
+2. Having the list of all invoices, create several batches and process them in parallel. This would allow a better
+   balance of the work in our threads than the current strategy. However, it would provide worse reports - which is
+   typically important in these applications.
 
 In total, I've spent 6 to 8 hours doing this challenge. 
