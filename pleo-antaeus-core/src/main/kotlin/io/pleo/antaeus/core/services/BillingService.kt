@@ -9,6 +9,9 @@ import io.pleo.antaeus.models.CustomerProcessingResults
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus.INVALID
 import io.pleo.antaeus.models.InvoiceStatus.PAID
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 
 class BillingService(
@@ -22,21 +25,31 @@ class BillingService(
         logger.info { "Starting to charge invoices for all customers" }
         val startTime = System.currentTimeMillis()
 
-        val invoicesByCustomer = invoiceService.fetchInvoicesGroupedByClient()
+        val results = runBlocking {
+            val invoicesByCustomer = invoiceService.fetchInvoicesGroupedByClient()
 
-        val resultsByCustomer = invoicesByCustomer
-            .map { (client, invoices) -> processCustomerInvoices(client, invoices) }
-            .toSet()
+            invoicesByCustomer
+                .map { (client, invoices) ->
+                    async {
+                        processCustomerInvoices(client, invoices)
+                    }
+                }
+                .awaitAll()
+                .map { it }
+                .toSet()
+        }
 
         val finishTime = System.currentTimeMillis()
         val executionTime = finishTime - startTime
 
         logger.info { "Finished charging invoices for all customers in $executionTime ms" }
 
-        return BillingProcessingResults(resultsByCustomer)
+        return BillingProcessingResults(results)
     }
 
     private fun processCustomerInvoices(customerId: Int, invoices: List<Invoice>): CustomerProcessingResults {
+        logger.debug { "Processing customer $customerId invoices" }
+
         var successfulCharges = 0
 
         invoices.forEach {
